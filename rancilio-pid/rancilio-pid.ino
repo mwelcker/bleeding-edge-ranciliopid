@@ -352,9 +352,15 @@ int waterSensorCheckTimer = 10000; // how often shall the water level be checked
 unsigned long previousTimerWaterLevelCheck = 0;
 
 /********************************************************
- * Temperature Sensor: TSIC 30x TEMP / Max6675
+ * Temperature Sensor: DSxxxxx / TSIC 30x TEMP / Max6675
  ******************************************************/
-#if (TEMPSENSOR == 3)
+#if (TEMPSENSOR == 1)
+  #define TEMPSENSOR_NAME "DSxxxxx"
+  #include <OneWire.h>
+  #include <DallasTemperature.h>
+  OneWire oneWire(pinTemperature); 
+  DallasTemperature sensors(&oneWire);
+#elif (TEMPSENSOR == 3)
   #define TEMPSENSOR_NAME "MAX6675"
   #include <max6675.h>
   MAX6675 thermocouple(pinTemperatureCLK, pinTemperatureCS, pinTemperatureSO);
@@ -2139,7 +2145,10 @@ network-issues with your other WiFi-devices on your WiFi-network. */
   }
 
   float readTemperatureFromSensor() {
-#if (TEMPSENSOR == 3)
+#if (TEMPSENSOR == 1)
+    sensors.requestTemperatures();
+    return sensors.getTempCByIndex(0);
+#elif (TEMPSENSOR == 3)
     //this sensor's reading flaps 0.5degrees on every read. Also calculate averages to mitigate PID issues.
     float past_average = getAverageTemperature(3,0);
     if (past_average == 0) {
@@ -2492,7 +2501,10 @@ network-issues with your other WiFi-devices on your WiFi-network. */
      ******************************************************/
     // displaymessage(0, "Init. vars", "");
     isrCounter = 950; // required
-#if (TEMPSENSOR == 2)    
+#if (TEMPSENSOR == 1)
+    sensors.begin();  
+    if (sensors.getDS18Count() != 1) { ERROR_println("DS18 Tempsensor cannot be initialized"); }   
+#elif (TEMPSENSOR == 2)    
     if (TSIC.begin() != true) { ERROR_println("TSIC Tempsensor cannot be initialized"); }
     delay(120);
 #endif    
